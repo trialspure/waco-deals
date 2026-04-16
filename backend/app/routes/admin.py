@@ -1,0 +1,38 @@
+from fastapi import APIRouter, Depends, BackgroundTasks
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.scrapers.zillow import scrape_waco_listings
+from app.scrapers.rentcast import enrich_properties_with_rent
+from app.scoring.engine import score_all_properties
+from app.models import Property, Score
+
+router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+def _run_full_pipeline(db: Session):
+    scrape_waco_listings(db)
+    enrich_properties_with_rent(db)
+    score_all_properties(db)
+
+
+@router.post("/scrape")
+def trigger_scrape(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    background_tasks.add_task(_run_full_pipeline, db)
+    return {"status": "pipeline started", "message": "Scraping Waco listings in background"}
+
+
+@router.post("/score")
+def trigger_score(db: Session = Depends(get_db)):
+    enrich_properties_with_rent(db)
+    count = score_all_properties(db)
+    return {"status": "ok", "scored": count}
+
+
+@router.get("/stats")
+def get_stats(db: Session = Depends(get_db)):
+    total = db.query(Property).count()
+    scored = db.query(Score).count()
+    by_strategy = {}
+    for strategy in ["wholesale", "flip", "rental", "airbnb"]:
+        by_strategy[strategy] = db.query(Score).filter(Score.best_strategy == strategy).count()
+    return {"total_properties": total, "scored": scored, "by_strategy": by_strategy}

@@ -1,0 +1,222 @@
+"use client";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { api, Property } from "@/lib/api";
+import { formatCurrency, formatPct, STRATEGY_CONFIG, scoreColor } from "@/lib/utils";
+import ScoreBadge from "@/components/ScoreBadge";
+import StrategyBadge from "@/components/StrategyBadge";
+import {
+  ArrowLeft, Bed, Bath, Square, MapPin, ExternalLink,
+  Calendar, FileText
+} from "lucide-react";
+
+export default function PropertyDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const id = Number(params.id);
+  const [property, setProperty] = useState<Property | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!id) return;
+    api.getProperty(id)
+      .then(setProperty)
+      .catch(() => setError("Property not found"))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) return <div className="max-w-5xl mx-auto px-4 py-10 text-gray-500">Loading…</div>;
+  if (error || !property) return <div className="max-w-5xl mx-auto px-4 py-10 text-red-600">{error || "Not found"}</div>;
+
+  const p = property;
+  const s = p.scores;
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
+      {/* Back */}
+      <button onClick={() => router.back()} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 mb-4">
+        <ArrowLeft size={16} /> Back to dashboard
+      </button>
+
+      {/* Header */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
+        {p.photo_url && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={p.photo_url} alt={p.address} className="w-full h-56 object-cover" />
+        )}
+        <div className="p-6">
+          <div className="flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h1 className="text-2xl font-bold">{p.address}</h1>
+              <p className="flex items-center gap-1 text-gray-500 mt-1">
+                <MapPin size={14} />
+                {p.city}, {p.state} {p.zip_code}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <StrategyBadge strategy={s?.best_strategy} />
+              <ScoreBadge score={s?.best_score ?? null} label="overall" />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 mt-4">
+            <span className="text-3xl font-bold">{formatCurrency(p.asking_price)}</span>
+            {p.zestimate && p.zestimate !== p.asking_price && (
+              <span className="text-gray-500 text-sm">
+                Zestimate: {formatCurrency(p.zestimate)}
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-4 mt-3 text-sm text-gray-600">
+            {p.beds != null && <span className="flex items-center gap-1"><Bed size={14} />{p.beds} beds</span>}
+            {p.baths != null && <span className="flex items-center gap-1"><Bath size={14} />{p.baths} baths</span>}
+            {p.sqft != null && <span className="flex items-center gap-1"><Square size={14} />{p.sqft.toLocaleString()} sqft</span>}
+            {p.year_built && <span className="flex items-center gap-1"><Calendar size={14} />Built {p.year_built}</span>}
+            {p.days_on_market != null && <span>{p.days_on_market} days on market</span>}
+            {p.property_type && <span>{p.property_type.replace(/_/g, " ")}</span>}
+          </div>
+
+          <div className="flex gap-3 mt-4">
+            <Link
+              href={`/offers?property_id=${p.id}`}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+            >
+              <FileText size={15} /> Generate Offer Letter
+            </Link>
+            {p.listing_url && (
+              <a
+                href={p.listing_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors"
+              >
+                <ExternalLink size={15} /> View on Zillow
+              </a>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Score breakdown */}
+      {s && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <ScoreCard
+            title="Wholesale"
+            strategy="wholesale"
+            score={s.wholesale_score}
+            metrics={[
+              { label: "Equity %", value: formatPct(s.wholesale_equity_pct) },
+              { label: "Max Offer", value: formatCurrency(s.wholesale_max_offer) },
+              { label: "Est. Repairs", value: formatCurrency(s.wholesale_est_repairs) },
+              { label: "ARV (Zestimate)", value: formatCurrency(p.zestimate) },
+            ]}
+            note="70% Rule: Max Offer = ARV × 0.70 − Repairs"
+          />
+          <ScoreCard
+            title="Fix & Flip"
+            strategy="flip"
+            score={s.flip_score}
+            metrics={[
+              { label: "Est. Profit", value: formatCurrency(s.flip_profit) },
+              { label: "Margin %", value: formatPct(s.flip_margin_pct) },
+              { label: "Max Offer", value: formatCurrency(s.flip_max_offer) },
+              { label: "ARV (Zestimate)", value: formatCurrency(p.zestimate) },
+            ]}
+            note="Profit = ARV − Asking − Repairs − Selling/Holding costs"
+          />
+          <ScoreCard
+            title="Long-Term Rental"
+            strategy="rental"
+            score={s.rental_score}
+            metrics={[
+              { label: "Est. Monthly Rent", value: formatCurrency(s.rental_monthly_rent) },
+              { label: "Cap Rate", value: formatPct(s.rental_cap_rate) },
+              { label: "Annual Cash Flow", value: formatCurrency(s.rental_annual_cashflow) },
+              { label: "Rent/Price Ratio", value: s.rental_monthly_rent && p.asking_price ? formatPct((s.rental_monthly_rent / p.asking_price) * 100) : "N/A" },
+            ]}
+            note="Cap Rate = NOI / Price (50% expense ratio applied)"
+          />
+          <ScoreCard
+            title="Airbnb / STR"
+            strategy="airbnb"
+            score={s.airbnb_score}
+            metrics={[
+              { label: "Est. Nightly Rate", value: formatCurrency(s.airbnb_nightly_rate) },
+              { label: "Monthly Revenue", value: formatCurrency(s.airbnb_monthly_revenue) },
+              { label: "Gross Annual Yield", value: formatPct(s.airbnb_annual_yield) },
+              { label: "Occupancy Est.", value: "55%" },
+            ]}
+            note="Revenue = Nightly Rate × 30 days × 55% occupancy"
+          />
+        </div>
+      )}
+
+      {/* Description */}
+      {p.description && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <h3 className="font-semibold mb-2">Listing Description</h3>
+          <p className="text-sm text-gray-600 leading-relaxed">{p.description}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ScoreCard({
+  title, strategy, score, metrics, note,
+}: {
+  title: string;
+  strategy: keyof typeof STRATEGY_CONFIG;
+  score: number | null;
+  metrics: { label: string; value: string }[];
+  note: string;
+}) {
+  const config = STRATEGY_CONFIG[strategy];
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="font-semibold text-base">{title}</h3>
+          <p className="text-xs text-gray-400 mt-0.5">{config.description}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <ScoreBadge score={score} />
+        </div>
+      </div>
+
+      {/* Score bar */}
+      <div className="mb-4">
+        <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all"
+            style={{
+              width: `${((score ?? 0) / 10) * 100}%`,
+              backgroundColor: config.mapColor,
+            }}
+          />
+        </div>
+        <div className="flex justify-between text-xs text-gray-400 mt-1">
+          <span>0</span>
+          <span className={scoreColor(score)}>
+            {score != null ? `${score.toFixed(1)} / 10` : "Not scored"}
+          </span>
+          <span>10</span>
+        </div>
+      </div>
+
+      <dl className="space-y-2">
+        {metrics.map(({ label, value }) => (
+          <div key={label} className="flex justify-between text-sm">
+            <dt className="text-gray-500">{label}</dt>
+            <dd className="font-medium">{value}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <p className="text-xs text-gray-400 mt-3 italic">{note}</p>
+    </div>
+  );
+}
