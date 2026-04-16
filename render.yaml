@@ -1,0 +1,42 @@
+databases:
+  - name: waco-deals-db
+    databaseName: waco_deals
+    user: waco
+    plan: free
+
+services:
+  - type: web
+    name: waco-deals-backend
+    plan: free
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: waco-deals-db
+          property: connectionString
+      - key: FRONTEND_URL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: RENTCAST_API_KEY
+        sync: false
+      - key: RAPIDAPI_KEY
+        sync: false
+      - key: HASDATA_API_KEY
+        sync: false
+
+  - type: web
+    name: waco-deals-frontend
+    plan: free
+    runtime: node
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
+      - key: PORT
+        value: 3000
