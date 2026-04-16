@@ -37,7 +37,7 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
-      - key: NEXT_PUBLIC_API_URL
+      - key: BACKEND_URL
         value: https://waco-deals-backend.onrender.com
       - key: PORT
         value: 3000

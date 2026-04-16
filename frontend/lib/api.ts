@@ -1,7 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ||
-  (typeof window !== "undefined" && window.location.hostname !== "localhost"
-    ? "https://waco-deals-backend.onrender.com"
-    : "http://localhost:8000");
+const API_BASE = "/api";
 
 export interface PropertyScore {
   wholesale_score: number | null;
