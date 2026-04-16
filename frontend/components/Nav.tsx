@@ -23,7 +23,7 @@ export default function Nav() {
       await api.triggerScrape();
       alert("Scrape started! Refresh in a minute to see new listings.");
     } catch {
-      alert("Failed to start scrape. Is the backend running?");
+      alert("Could not reach the backend. It may be waking up — please try again in 30 seconds.");
     } finally {
       setScraping(false);
     }

@@ -50,7 +50,7 @@ export default function DashboardPage() {
       const data = await api.getProperties(f);
       setProperties(data);
     } catch {
-      setError("Could not connect to backend. Make sure the FastAPI server is running on port 8000.");
+      setError("Could not load properties. The backend may be starting up — please wait a moment and try again.");
     } finally {
       setLoading(false);
     }

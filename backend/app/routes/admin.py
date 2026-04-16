@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, BackgroundTasks
 from sqlalchemy.orm import Session
-from app.database import get_db
+from app.database import get_db, SessionLocal
 from app.scrapers.zillow import scrape_waco_listings
 from app.scrapers.rentcast import enrich_properties_with_rent
 from app.scoring.engine import score_all_properties
@@ -9,15 +9,19 @@ from app.models import Property, Score
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-def _run_full_pipeline(db: Session):
-    scrape_waco_listings(db)
-    enrich_properties_with_rent(db)
-    score_all_properties(db)
+def _run_full_pipeline():
+    db = SessionLocal()
+    try:
+        scrape_waco_listings(db)
+        enrich_properties_with_rent(db)
+        score_all_properties(db)
+    finally:
+        db.close()
 
 
 @router.post("/scrape")
-def trigger_scrape(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
-    background_tasks.add_task(_run_full_pipeline, db)
+def trigger_scrape(background_tasks: BackgroundTasks):
+    background_tasks.add_task(_run_full_pipeline)
     return {"status": "pipeline started", "message": "Scraping Waco listings in background"}
 
 

@@ -13,6 +13,7 @@ services:
     pythonVersion: "3.11"
     buildCommand: pip install -r requirements.txt
     startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -28,6 +29,14 @@ services:
         sync: false
       - key: HASDATA_API_KEY
         sync: false
+
+  - type: cron
+    name: waco-deals-keepalive
+    plan: free
+    runtime: python
+    schedule: "*/10 * * * *"
+    buildCommand: pip install requests
+    startCommand: python -c "import requests; requests.get('https://waco-deals-backend.onrender.com/health', timeout=30)"
 
   - type: web
     name: waco-deals-frontend

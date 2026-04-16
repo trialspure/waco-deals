@@ -47,6 +47,11 @@ app.include_router(settings_router.router)
 app.include_router(analysis.router)
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 @app.get("/")
 def root():
     return {"status": "ok", "app": "Waco Real Estate Deal Finder"}
