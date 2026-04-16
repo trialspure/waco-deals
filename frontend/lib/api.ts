@@ -40,10 +40,20 @@ export interface Property {
   price_per_sqft: number | null;
   days_on_market: number | null;
   estimated_rent: number | null;
+  agent_name: string | null;
+  agent_email: string | null;
+  agent_phone: string | null;
+  brokerage: string | null;
   listing_url: string | null;
   photo_url: string | null;
   description: string | null;
   scores: PropertyScore | null;
+}
+
+export interface PropertyAnalysis {
+  property_id: number;
+  address: string;
+  analysis: string;
 }
 
 export interface PropertyFilters {
@@ -116,6 +126,9 @@ export const api = {
       method: "PUT",
       body: JSON.stringify(data),
     }),
+
+  generateAnalysis: (propertyId: number) =>
+    apiFetch<PropertyAnalysis>(`/properties/${propertyId}/analysis`, { method: "POST" }),
 
   generateOffer: async (payload: object): Promise<Blob> => {
     const res = await fetch(`${API_BASE}/offers/generate`, {

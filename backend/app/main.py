@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
 from app.routes import properties, offers, admin, settings as settings_router
+from app.routes import analysis
 from app.scheduler import start_scheduler, stop_scheduler
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s — %(message)s")
@@ -39,6 +40,7 @@ app.include_router(properties.router)
 app.include_router(offers.router)
 app.include_router(admin.router)
 app.include_router(settings_router.router)
+app.include_router(analysis.router)
 
 
 @app.get("/")

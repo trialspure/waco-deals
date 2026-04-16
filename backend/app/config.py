@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     hasdata_api_key: str = ""
     rapidapi_key: str = ""
     rentcast_api_key: str = ""
+    anthropic_api_key: str = ""
     repair_cost_per_sqft: float = 25.0
 
     # Scoring thresholds (all user-adjustable via settings page)

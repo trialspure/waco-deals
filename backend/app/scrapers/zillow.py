@@ -101,6 +101,30 @@ def _parse_property(raw: dict) -> Optional[dict]:
     if listing_url and not listing_url.startswith("http"):
         listing_url = "https://www.zillow.com" + listing_url
 
+    # Agent / seller contact — Zillow surfaces this in several possible shapes
+    attribution = raw.get("attributionInfo") or home_info.get("attributionInfo") or {}
+    agent_name = (
+        attribution.get("agentName")
+        or raw.get("agentName")
+        or home_info.get("agentName")
+    )
+    agent_email = (
+        attribution.get("agentEmail")
+        or raw.get("agentEmail")
+        or home_info.get("agentEmail")
+    )
+    agent_phone = (
+        attribution.get("agentPhoneNumber")
+        or attribution.get("agentPhone")
+        or raw.get("agentPhone")
+        or home_info.get("agentPhone")
+    )
+    brokerage = (
+        attribution.get("brokerName")
+        or raw.get("brokerName")
+        or home_info.get("brokerName")
+    )
+
     return {
         "zpid": zpid,
         "address": street,
@@ -119,6 +143,10 @@ def _parse_property(raw: dict) -> Optional[dict]:
         "zestimate": zestimate,
         "price_per_sqft": (asking / sqft) if asking and sqft else None,
         "days_on_market": home_info.get("daysOnZillow"),
+        "agent_name": agent_name,
+        "agent_email": agent_email,
+        "agent_phone": agent_phone,
+        "brokerage": brokerage,
         "listing_url": listing_url,
         "photo_url": raw.get("imgSrc"),
         "description": raw.get("description") or "",

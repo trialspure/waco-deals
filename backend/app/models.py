@@ -38,6 +38,12 @@ class Property(Base):
     estimated_rent = Column(Float)
     rent_fetched_at = Column(DateTime)
 
+    # Agent / seller contact
+    agent_name = Column(String)
+    agent_email = Column(String)
+    agent_phone = Column(String)
+    brokerage = Column(String)
+
     # Listing metadata
     listing_url = Column(String)
     photo_url = Column(String)
