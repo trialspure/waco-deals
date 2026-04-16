@@ -107,7 +107,7 @@ Format it cleanly with clear headers for each strategy. Keep the tone profession
         client = anthropic.Anthropic(api_key=settings.anthropic_api_key)
         message = client.messages.create(
             model="claude-opus-4-6",
-            max_tokens=1800,
+            max_tokens=3000,
             messages=[{"role": "user", "content": prompt}],
         )
         analysis_text = message.content[0].text

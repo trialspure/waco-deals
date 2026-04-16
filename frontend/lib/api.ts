@@ -44,6 +44,7 @@ export interface Property {
   agent_email: string | null;
   agent_phone: string | null;
   brokerage: string | null;
+  is_saved: boolean;
   listing_url: string | null;
   photo_url: string | null;
   description: string | null;
@@ -66,6 +67,7 @@ export interface PropertyFilters {
   sort_by?: string;
   limit?: number;
   offset?: number;
+  saved_only?: boolean;
 }
 
 export interface AdminStats {
@@ -126,6 +128,9 @@ export const api = {
       method: "PUT",
       body: JSON.stringify(data),
     }),
+
+  toggleSave: (propertyId: number) =>
+    apiFetch<Property>(`/properties/${propertyId}/toggle-save`, { method: "POST" }),
 
   generateAnalysis: (propertyId: number) =>
     apiFetch<PropertyAnalysis>(`/properties/${propertyId}/analysis`, { method: "POST" }),

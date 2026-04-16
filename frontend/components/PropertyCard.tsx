@@ -1,9 +1,11 @@
+"use client";
+import { useState } from "react";
 import Link from "next/link";
-import { Property } from "@/lib/api";
+import { api, Property } from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import ScoreBadge from "./ScoreBadge";
 import StrategyBadge from "./StrategyBadge";
-import { Bed, Bath, Square, MapPin, ExternalLink } from "lucide-react";
+import { Bed, Bath, Square, MapPin, ExternalLink, Bookmark, Phone } from "lucide-react";
 
 interface Props {
   property: Property;
@@ -11,6 +13,20 @@ interface Props {
 
 export default function PropertyCard({ property: p }: Props) {
   const s = p.scores;
+  const [saved, setSaved] = useState(p.is_saved);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSaving(true);
+    try {
+      const updated = await api.toggleSave(p.id);
+      setSaved(updated.is_saved);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
@@ -30,7 +46,7 @@ export default function PropertyCard({ property: p }: Props) {
       <div className="p-4">
         {/* Header */}
         <div className="flex items-start justify-between gap-2 mb-2">
-          <div>
+          <div className="min-w-0">
             <p className="font-semibold text-base leading-tight">{p.address}</p>
             <p className="text-sm text-gray-500 flex items-center gap-1 mt-0.5">
               <MapPin size={12} />
@@ -49,7 +65,7 @@ export default function PropertyCard({ property: p }: Props) {
         </p>
 
         {/* Details row */}
-        <div className="flex items-center gap-3 text-sm text-gray-500 mb-4">
+        <div className="flex items-center gap-3 text-sm text-gray-500 mb-3">
           {p.beds != null && (
             <span className="flex items-center gap-1">
               <Bed size={14} />
@@ -72,6 +88,23 @@ export default function PropertyCard({ property: p }: Props) {
             <span className="ml-auto text-xs">{p.days_on_market}d on market</span>
           )}
         </div>
+
+        {/* Agent contact */}
+        {(p.agent_name || p.agent_phone) && (
+          <div className="flex items-center gap-2 text-xs text-gray-500 mb-3 bg-gray-50 rounded-lg px-2 py-1.5">
+            <span className="truncate">{p.agent_name || "Agent"}</span>
+            {p.agent_phone && (
+              <a
+                href={`tel:${p.agent_phone}`}
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1 text-blue-600 hover:underline ml-auto shrink-0"
+              >
+                <Phone size={11} />
+                {p.agent_phone}
+              </a>
+            )}
+          </div>
+        )}
 
         {/* Mini score row */}
         {s && (
@@ -98,6 +131,18 @@ export default function PropertyCard({ property: p }: Props) {
           >
             View Analysis
           </Link>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            title={saved ? "Remove from saved" : "Save property"}
+            className={`p-2 rounded-lg border transition-colors ${
+              saved
+                ? "bg-amber-50 border-amber-300 text-amber-500 hover:bg-amber-100"
+                : "border-gray-200 text-gray-400 hover:bg-gray-50"
+            }`}
+          >
+            <Bookmark size={16} className={saved ? "fill-amber-400" : ""} />
+          </button>
           {p.listing_url && (
             <a
               href={p.listing_url}

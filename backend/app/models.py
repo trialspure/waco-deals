@@ -44,6 +44,9 @@ class Property(Base):
     agent_phone = Column(String)
     brokerage = Column(String)
 
+    # User actions
+    is_saved = Column(Boolean, default=False)
+
     # Listing metadata
     listing_url = Column(String)
     photo_url = Column(String)

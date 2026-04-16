@@ -56,6 +56,7 @@ class PropertyOut(BaseModel):
     agent_email: Optional[str]
     agent_phone: Optional[str]
     brokerage: Optional[str]
+    is_saved: bool = False
     listing_url: Optional[str]
     photo_url: Optional[str]
     description: Optional[str]
@@ -75,11 +76,14 @@ def list_properties(
     zip_code: Optional[str] = Query(None),
     min_beds: Optional[float] = Query(None),
     sort_by: str = Query("best_score", description="best_score|asking_price|days_on_market"),
+    saved_only: bool = Query(False),
     limit: int = Query(50, le=200),
     offset: int = Query(0),
 ):
     query = db.query(Property).join(Score, Property.id == Score.property_id, isouter=True)
 
+    if saved_only:
+        query = query.filter(Property.is_saved == True)  # noqa: E712
     if strategy:
         query = query.filter(Score.best_strategy == strategy)
     if min_score is not None:
@@ -109,4 +113,16 @@ def get_property(property_id: int, db: Session = Depends(get_db)):
     prop = db.query(Property).filter(Property.id == property_id).first()
     if not prop:
         raise HTTPException(status_code=404, detail="Property not found")
+    return prop
+
+
+@router.post("/{property_id}/toggle-save", response_model=PropertyOut)
+def toggle_save(property_id: int, db: Session = Depends(get_db)):
+    from fastapi import HTTPException
+    prop = db.query(Property).filter(Property.id == property_id).first()
+    if not prop:
+        raise HTTPException(status_code=404, detail="Property not found")
+    prop.is_saved = not prop.is_saved
+    db.commit()
+    db.refresh(prop)
     return prop
