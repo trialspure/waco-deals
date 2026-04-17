@@ -21,7 +21,8 @@ export default function Nav() {
     setScraping(true);
     try {
       await api.triggerScrape();
-      alert("Scrape started! Refresh in a minute to see new listings.");
+      window.dispatchEvent(new Event("reload-properties"));
+      alert("Scrape started! New listings will appear within a minute.");
     } catch {
       alert("Could not reach the backend. It may be waking up — please try again in 30 seconds.");
     } finally {

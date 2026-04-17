@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { api, Property, PropertyFilters } from "@/lib/api";
 import PropertyCard from "@/components/PropertyCard";
 import { Search, SlidersHorizontal, Bookmark } from "lucide-react";
@@ -26,6 +26,7 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<{ total_properties: number; scored: number; by_strategy: Record<string, number> } | null>(null);
   const [tab, setTab] = useState<"all" | "saved">("all");
+  const loadIdRef = useRef(0);
 
   const [filters, setFilters] = useState<PropertyFilters>({
     strategy: "",
@@ -38,25 +39,44 @@ export default function DashboardPage() {
   const [minScore, setMinScore] = useState("");
 
   const load = useCallback(async () => {
+    const myId = ++loadIdRef.current;
     setLoading(true);
     setError(null);
-    try {
-      const f: PropertyFilters = { ...filters };
-      if (maxPrice) f.max_price = parseFloat(maxPrice);
-      if (minBeds) f.min_beds = parseFloat(minBeds);
-      if (zipCode) f.zip_code = zipCode;
-      if (minScore) f.min_score = parseFloat(minScore);
-      if (tab === "saved") f.saved_only = true;
-      const data = await api.getProperties(f);
-      setProperties(data);
-    } catch {
+
+    for (let attempt = 0; attempt < 6; attempt++) {
+      if (loadIdRef.current !== myId) return;
+      try {
+        const f: PropertyFilters = { ...filters };
+        if (maxPrice) f.max_price = parseFloat(maxPrice);
+        if (minBeds) f.min_beds = parseFloat(minBeds);
+        if (zipCode) f.zip_code = zipCode;
+        if (minScore) f.min_score = parseFloat(minScore);
+        if (tab === "saved") f.saved_only = true;
+        const data = await api.getProperties(f);
+        if (loadIdRef.current !== myId) return;
+        setProperties(data);
+        setLoading(false);
+        return;
+      } catch {
+        if (attempt < 5 && loadIdRef.current === myId) {
+          await new Promise<void>((res) => setTimeout(res, 5000));
+        }
+      }
+    }
+
+    if (loadIdRef.current === myId) {
       setError("Could not load properties. The backend may be starting up — please wait a moment and try again.");
-    } finally {
       setLoading(false);
     }
   }, [filters, maxPrice, minBeds, zipCode, minScore, tab]);
 
   useEffect(() => { load(); }, [load]);
+
+  useEffect(() => {
+    const handler = () => load();
+    window.addEventListener("reload-properties", handler);
+    return () => window.removeEventListener("reload-properties", handler);
+  }, [load]);
 
   useEffect(() => {
     api.getStats().then(setStats).catch(() => {});
@@ -167,8 +187,14 @@ export default function DashboardPage() {
 
       {/* Results */}
       {error && (
-        <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700 mb-6">
-          {error}
+        <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700 mb-6 flex items-center justify-between">
+          <span>{error}</span>
+          <button
+            onClick={load}
+            className="ml-4 px-3 py-1 bg-red-100 hover:bg-red-200 rounded-md text-red-700 font-medium transition-colors"
+          >
+            Retry
+          </button>
         </div>
       )}
 
