@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { api, Property, PropertyFilters } from "@/lib/api";
 import PropertyCard from "@/components/PropertyCard";
-import { Search, SlidersHorizontal, Bookmark } from "lucide-react";
+import { Search, SlidersHorizontal, Bookmark, Loader2 } from "lucide-react";
 
 const STRATEGIES = [
   { value: "", label: "All Strategies" },
@@ -23,6 +23,7 @@ const WACO_ZIPS = ["", "76701", "76702", "76703", "76704", "76705", "76706", "76
 export default function DashboardPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
+  const [waking, setWaking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<{ total_properties: number; scored: number; by_strategy: Record<string, number> } | null>(null);
   const [tab, setTab] = useState<"all" | "saved">("all");
@@ -42,8 +43,9 @@ export default function DashboardPage() {
     const myId = ++loadIdRef.current;
     setLoading(true);
     setError(null);
+    setWaking(false);
 
-    for (let attempt = 0; attempt < 6; attempt++) {
+    for (let attempt = 0; attempt < 12; attempt++) {
       if (loadIdRef.current !== myId) return;
       try {
         const f: PropertyFilters = { ...filters };
@@ -55,17 +57,20 @@ export default function DashboardPage() {
         const data = await api.getProperties(f);
         if (loadIdRef.current !== myId) return;
         setProperties(data);
+        setWaking(false);
         setLoading(false);
         return;
       } catch {
-        if (attempt < 5 && loadIdRef.current === myId) {
-          await new Promise<void>((res) => setTimeout(res, 5000));
+        if (attempt >= 1) setWaking(true);
+        if (attempt < 11 && loadIdRef.current === myId) {
+          await new Promise<void>((res) => setTimeout(res, 8000));
         }
       }
     }
 
     if (loadIdRef.current === myId) {
-      setError("Could not load properties. The backend may be starting up — please wait a moment and try again.");
+      setWaking(false);
+      setError("Could not load properties. Please try again.");
       setLoading(false);
     }
   }, [filters, maxPrice, minBeds, zipCode, minScore, tab]);
@@ -199,11 +204,19 @@ export default function DashboardPage() {
       )}
 
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-xl border border-gray-200 h-80 animate-pulse" />
-          ))}
-        </div>
+        waking ? (
+          <div className="text-center py-20">
+            <Loader2 size={32} className="mx-auto text-blue-500 mb-4 animate-spin" />
+            <p className="text-gray-700 font-medium">Waking up server...</p>
+            <p className="text-sm text-gray-400 mt-1">Free servers sleep when idle. This usually takes 30–60 seconds.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-xl border border-gray-200 h-80 animate-pulse" />
+            ))}
+          </div>
+        )
       ) : properties.length === 0 ? (
         <EmptyState saved={tab === "saved"} />
       ) : (
