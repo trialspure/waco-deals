@@ -29,8 +29,12 @@ app = FastAPI(
 )
 
 import os
-_FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
-_ALLOWED_ORIGINS = [_FRONTEND_URL, "http://localhost:3000"]
+_FRONTEND_URL = os.getenv("FRONTEND_URL", "")
+_ALLOWED_ORIGINS = list(filter(None, [
+    _FRONTEND_URL,
+    "https://waco-deals-frontend.onrender.com",
+    "http://localhost:3000",
+]))
 
 app.add_middleware(
     CORSMiddleware,
@@ -47,7 +51,7 @@ app.include_router(settings_router.router)
 app.include_router(analysis.router)
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health():
     return {"status": "ok"}
 
