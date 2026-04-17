@@ -1,4 +1,11 @@
-const API_BASE = "/api";
+const PROD_BACKEND = "https://waco-deals-backend.onrender.com";
+
+function getApiBase(): string {
+  if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
+    return PROD_BACKEND;
+  }
+  return "/api"; // local dev — proxied via Next.js rewrite
+}
 
 export interface PropertyScore {
   wholesale_score: number | null;
@@ -94,7 +101,7 @@ export interface AppSettings {
 }
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${getApiBase()}${path}`, {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
@@ -136,7 +143,7 @@ export const api = {
     apiFetch<PropertyAnalysis>(`/properties/${propertyId}/analysis`, { method: "POST" }),
 
   generateOffer: async (payload: object): Promise<Blob> => {
-    const res = await fetch(`${API_BASE}/offers/generate`, {
+    const res = await fetch(`${getApiBase()}/offers/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
