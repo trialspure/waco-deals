@@ -55,6 +55,8 @@ export interface Property {
   listing_url: string | null;
   photo_url: string | null;
   description: string | null;
+  source: "zillow" | "facebook_marketplace" | null;
+  listing_type: "sale" | "rent" | null;
   scores: PropertyScore | null;
 }
 
@@ -71,6 +73,8 @@ export interface PropertyFilters {
   max_price?: number;
   zip_code?: string;
   min_beds?: number;
+  source?: string;
+  listing_type?: string;
   sort_by?: string;
   limit?: number;
   offset?: number;

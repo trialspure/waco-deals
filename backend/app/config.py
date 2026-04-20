@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql://waco:waco_secret@localhost:5432/waco_deals"
     hasdata_api_key: str = ""
     rapidapi_key: str = ""
+    fb_marketplace_rapidapi_key: str = ""
     rentcast_api_key: str = ""
     anthropic_api_key: str = ""
     repair_cost_per_sqft: float = 25.0

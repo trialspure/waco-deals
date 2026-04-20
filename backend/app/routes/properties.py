@@ -60,6 +60,8 @@ class PropertyOut(BaseModel):
     listing_url: Optional[str]
     photo_url: Optional[str]
     description: Optional[str]
+    source: Optional[str] = "zillow"
+    listing_type: Optional[str] = "sale"
     scores: Optional[ScoreOut]
 
     class Config:
@@ -75,6 +77,8 @@ def list_properties(
     min_price: Optional[float] = Query(None),
     zip_code: Optional[str] = Query(None),
     min_beds: Optional[float] = Query(None),
+    source: Optional[str] = Query(None, description="Filter by source: zillow|facebook_marketplace"),
+    listing_type: Optional[str] = Query(None, description="Filter by listing_type: sale|rent"),
     sort_by: str = Query("best_score", description="best_score|asking_price|days_on_market"),
     saved_only: bool = Query(False),
     limit: int = Query(50, le=200),
@@ -96,6 +100,10 @@ def list_properties(
         query = query.filter(Property.zip_code == zip_code)
     if min_beds is not None:
         query = query.filter(Property.beds >= min_beds)
+    if source:
+        query = query.filter(Property.source == source)
+    if listing_type:
+        query = query.filter(Property.listing_type == listing_type)
 
     if sort_by == "asking_price":
         query = query.order_by(Property.asking_price.asc())

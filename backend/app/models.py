@@ -53,6 +53,11 @@ class Property(Base):
     description = Column(Text)
     status = Column(String, default="FOR_SALE")
 
+    # Source platform: "zillow" or "facebook_marketplace"
+    source = Column(String, nullable=False, default="zillow", index=True)
+    # "sale" (FSBO / for-sale) or "rent" (landlord listing — acquisition target, no stated sale price)
+    listing_type = Column(String, nullable=False, default="sale")
+
     scraped_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

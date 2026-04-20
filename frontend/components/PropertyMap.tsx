@@ -61,16 +61,29 @@ export default function PropertyMap({ properties }: Props) {
 
         const strategyLabel = strategy
           ? STRATEGY_CONFIG[strategy as keyof typeof STRATEGY_CONFIG]?.label
+          : p.listing_type === "rent"
+          ? "Acquisition Target"
           : "Unscored";
+
+        const isFacebook = p.source === "facebook_marketplace";
+        const sourceLabel = isFacebook ? "FB Marketplace" : "Zillow";
+        const sourceBg = isFacebook ? "#dbeafe" : "#f3f4f6";
+        const sourceFg = isFacebook ? "#1d4ed8" : "#374151";
+
+        const priceHtml =
+          p.listing_type === "rent" && p.estimated_rent
+            ? `${formatCurrency(p.estimated_rent)}/mo rent`
+            : formatCurrency(p.asking_price);
 
         const popup = `
           <div style="font-family:system-ui,sans-serif;min-width:200px">
             <p style="font-weight:600;margin:0 0 4px">${p.address}</p>
-            <p style="font-size:18px;font-weight:700;margin:0 0 4px">${formatCurrency(p.asking_price)}</p>
+            <p style="font-size:18px;font-weight:700;margin:0 0 4px">${priceHtml}</p>
             <p style="font-size:12px;color:#666;margin:0 0 8px">${p.beds ?? "?"}bd / ${p.baths ?? "?"}ba · ${p.sqft?.toLocaleString() ?? "?"} sqft</p>
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap">
               <span style="background:${color};color:white;border-radius:9999px;padding:2px 8px;font-size:11px;font-weight:600">${strategyLabel}</span>
-              <span style="font-size:12px">Score: <strong>${p.scores?.best_score?.toFixed(1) ?? "N/A"}</strong></span>
+              ${p.scores?.best_score != null ? `<span style="font-size:12px">Score: <strong>${p.scores.best_score.toFixed(1)}</strong></span>` : ""}
+              <span style="background:${sourceBg};color:${sourceFg};border-radius:4px;padding:2px 6px;font-size:10px;font-weight:600">${sourceLabel}</span>
             </div>
             <a href="/properties/${p.id}" style="display:block;text-align:center;background:#2563eb;color:white;border-radius:6px;padding:6px;font-size:12px;font-weight:600;text-decoration:none">
               View Analysis →

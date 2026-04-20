@@ -6,6 +6,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from app.database import SessionLocal
 from app.scrapers.zillow import scrape_waco_listings
+from app.scrapers.facebook import scrape_facebook_listings
 from app.scrapers.rentcast import enrich_properties_with_rent
 from app.scoring.engine import score_all_properties
 
@@ -18,7 +19,12 @@ def run_pipeline():
     db = SessionLocal()
     try:
         count = scrape_waco_listings(db)
-        logger.info(f"Scraped {count} listings")
+        logger.info(f"Scraped {count} Zillow listings")
+        try:
+            fb_count = scrape_facebook_listings(db)
+            logger.info(f"Scraped {fb_count} FB Marketplace listings")
+        except Exception as e:
+            logger.error(f"FB Marketplace scrape failed (continuing): {e}")
         enrich_properties_with_rent(db)
         score_all_properties(db)
         logger.info("Pipeline complete")

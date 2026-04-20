@@ -66,7 +66,14 @@ def score_property(prop: Property) -> dict:
 def score_all_properties(db: Session) -> int:
     props = db.query(Property).all()
     updated = 0
+    skipped = 0
     for prop in props:
+        # FB Marketplace rentals have no stated sale price — they're acquisition
+        # targets (message the landlord). Scoring would divide by zero / produce
+        # bogus numbers, so we leave them unscored and render them specially in UI.
+        if prop.asking_price is None:
+            skipped += 1
+            continue
         try:
             data = score_property(prop)
             score_row = db.query(Score).filter(Score.property_id == prop.id).first()
@@ -81,5 +88,5 @@ def score_all_properties(db: Session) -> int:
         except Exception as e:
             logger.error(f"Scoring error for property {prop.id}: {e}")
     db.commit()
-    logger.info(f"Scoring complete — {updated} properties scored")
+    logger.info(f"Scoring complete — {updated} properties scored, {skipped} skipped (no asking price)")
     return updated

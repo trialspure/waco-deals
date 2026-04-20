@@ -9,6 +9,7 @@ from typing import Optional
 from sqlalchemy.orm import Session
 from app.config import settings
 from app.models import Property
+from app.scrapers._common import upsert_property
 
 logger = logging.getLogger(__name__)
 
@@ -151,21 +152,9 @@ def _parse_property(raw: dict) -> Optional[dict]:
         "photo_url": raw.get("imgSrc"),
         "description": raw.get("description") or "",
         "status": "FOR_SALE",
+        "source": "zillow",
+        "listing_type": "sale",
     }
-
-
-def upsert_property(db: Session, data: dict) -> Property:
-    prop = db.query(Property).filter(Property.zpid == data["zpid"]).first()
-    if prop:
-        for k, v in data.items():
-            if v is not None:
-                setattr(prop, k, v)
-    else:
-        prop = Property(**data)
-        db.add(prop)
-    db.commit()
-    db.refresh(prop)
-    return prop
 
 
 def scrape_waco_listings(db: Session) -> int:

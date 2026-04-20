@@ -80,6 +80,9 @@ export default function PropertyDetailPage() {
 
   const p = property;
   const s = p.scores;
+  const isFacebook = p.source === "facebook_marketplace";
+  const isAcquisitionTarget = p.listing_type === "rent";
+  const externalLabel = isFacebook ? "Message on Marketplace" : "View on Zillow";
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
@@ -103,18 +106,44 @@ export default function PropertyDetailPage() {
                 {p.city}, {p.state} {p.zip_code}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <StrategyBadge strategy={s?.best_strategy} />
-              <ScoreBadge score={s?.best_score ?? null} label="overall" />
+            <div className="flex items-center gap-2 flex-wrap">
+              {isAcquisitionTarget ? (
+                <span className="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                  Acquisition Target
+                </span>
+              ) : (
+                <>
+                  <StrategyBadge strategy={s?.best_strategy} />
+                  <ScoreBadge score={s?.best_score ?? null} label="overall" />
+                </>
+              )}
+              <span
+                className={`inline-block text-[11px] font-medium px-2 py-0.5 rounded ${
+                  isFacebook ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-600"
+                }`}
+              >
+                {isFacebook ? "FB Marketplace" : "Zillow"}
+              </span>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-4 mt-4">
-            <span className="text-3xl font-bold">{formatCurrency(p.asking_price)}</span>
-            {p.zestimate && p.zestimate !== p.asking_price && (
-              <span className="text-gray-500 text-sm">
-                Zestimate: {formatCurrency(p.zestimate)}
-              </span>
+            {isAcquisitionTarget && p.estimated_rent ? (
+              <>
+                <span className="text-3xl font-bold">{formatCurrency(p.estimated_rent)}/mo rent</span>
+                <span className="text-gray-500 text-sm">
+                  Landlord-posted rent — contact to discuss acquisition
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-3xl font-bold">{formatCurrency(p.asking_price)}</span>
+                {p.zestimate && p.zestimate !== p.asking_price && (
+                  <span className="text-gray-500 text-sm">
+                    Zestimate: {formatCurrency(p.zestimate)}
+                  </span>
+                )}
+              </>
             )}
           </div>
 
@@ -152,7 +181,7 @@ export default function PropertyDetailPage() {
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50 transition-colors"
               >
-                <ExternalLink size={15} /> View on Zillow
+                <ExternalLink size={15} /> {externalLabel}
               </a>
             )}
           </div>

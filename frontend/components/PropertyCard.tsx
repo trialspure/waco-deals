@@ -16,6 +16,10 @@ export default function PropertyCard({ property: p }: Props) {
   const [saved, setSaved] = useState(p.is_saved);
   const [saving, setSaving] = useState(false);
 
+  const isFacebook = p.source === "facebook_marketplace";
+  const isAcquisitionTarget = p.listing_type === "rent";
+  const externalLabel = isFacebook ? "Message on Marketplace" : "View on Zillow";
+
   const handleSave = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -54,14 +58,32 @@ export default function PropertyCard({ property: p }: Props) {
             </p>
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
-            <ScoreBadge score={s?.best_score ?? null} />
-            <StrategyBadge strategy={s?.best_strategy} size="sm" />
+            {isAcquisitionTarget ? (
+              <span className="inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                Acquisition Target
+              </span>
+            ) : (
+              <>
+                <ScoreBadge score={s?.best_score ?? null} />
+                <StrategyBadge strategy={s?.best_strategy} size="sm" />
+              </>
+            )}
+            <span
+              className={`inline-block text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                isFacebook ? "bg-blue-50 text-blue-700" : "bg-gray-100 text-gray-600"
+              }`}
+              title={isFacebook ? "From Facebook Marketplace" : "From Zillow"}
+            >
+              {isFacebook ? "FB Marketplace" : "Zillow"}
+            </span>
           </div>
         </div>
 
-        {/* Price */}
+        {/* Price (or monthly rent for acquisition targets) */}
         <p className="text-2xl font-bold text-gray-900 mb-3">
-          {formatCurrency(p.asking_price)}
+          {isAcquisitionTarget && p.estimated_rent
+            ? `${formatCurrency(p.estimated_rent)}/mo rent`
+            : formatCurrency(p.asking_price)}
         </p>
 
         {/* Details row */}
@@ -149,7 +171,7 @@ export default function PropertyCard({ property: p }: Props) {
               target="_blank"
               rel="noopener noreferrer"
               className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-              title="View on Zillow"
+              title={externalLabel}
             >
               <ExternalLink size={16} className="text-gray-500" />
             </a>
